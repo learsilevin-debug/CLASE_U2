@@ -1,0 +1,84 @@
+### Colección de pruebas manuales (extensión "REST Client" de VS Code, o JetBrains HTTP Client).
+### Ejecuta las peticiones en orden. Las cookies de sesión se conservan automáticamente.
+
+@base = http://localhost:3000
+
+### 0. Salud
+GET {{base}}/api/salud
+
+### 1. Registro (abre sesión automáticamente)
+POST {{base}}/api/auth/registro
+Content-Type: application/json
+
+{ "nombre": "ana", "clave": "clave-segura-1" }
+
+### 2. Login
+POST {{base}}/api/auth/login
+Content-Type: application/json
+
+{ "nombre": "ana", "clave": "clave-segura-1" }
+
+### 3. ¿Quién soy?
+GET {{base}}/api/auth/yo
+
+### 4. Crear tarea (201 + Location)
+POST {{base}}/api/tareas
+Content-Type: application/json
+
+{ "titulo": "Entregar informe", "prioridad": "alta", "fechaLimite": "2026-11-10" }
+
+### 5. Crear tarea inválida (422 con detalles)
+POST {{base}}/api/tareas
+Content-Type: application/json
+
+{ "titulo": "ab", "estado": "hecho" }
+
+### 6. Listar con filtros, orden y paginación
+GET {{base}}/api/tareas?estado=pendiente&prioridad=alta&q=informe&ordenar=fecha_limite&direccion=asc&pagina=1&limite=5
+
+### 7. Obtener una tarea
+GET {{base}}/api/tareas/1
+
+### 8. Modificación parcial (requiere la version actual)
+PATCH {{base}}/api/tareas/1
+Content-Type: application/json
+
+{ "estado": "en_progreso", "version": 1 }
+
+### 9. Mismo PATCH con la versión vieja (409 CONFLICTO_VERSION)
+PATCH {{base}}/api/tareas/1
+Content-Type: application/json
+
+{ "estado": "completada", "version": 1 }
+
+### 10. Reemplazo completo
+PUT {{base}}/api/tareas/1
+Content-Type: application/json
+
+{ "titulo": "Entregar informe final", "descripcion": "Versión definitiva", "estado": "en_progreso", "prioridad": "alta", "fechaLimite": "2026-11-12", "version": 2 }
+
+### 11. Adjuntar archivo (PNG, JPG, PDF o TXT; máx. 2 MB). Cambia la ruta por un archivo tuyo.
+POST {{base}}/api/tareas/1/archivo
+Content-Type: multipart/form-data; boundary=----frontera
+
+------frontera
+Content-Disposition: form-data; name="archivo"; filename="ejemplo.png"
+Content-Type: image/png
+
+< ./ejemplo.png
+------frontera--
+
+### 12. Descargar el adjunto
+GET {{base}}/api/tareas/1/archivo
+
+### 13. Quitar el adjunto (204)
+DELETE {{base}}/api/tareas/1/archivo
+
+### 14. Eliminar la tarea (204)
+DELETE {{base}}/api/tareas/1
+
+### 15. Método no permitido (405 + cabecera Allow)
+PATCH {{base}}/api/tareas
+
+### 16. Cerrar sesión (204)
+POST {{base}}/api/auth/logout
